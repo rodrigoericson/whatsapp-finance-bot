@@ -1,6 +1,7 @@
 import {
   corrigirLancamentoPorTexto,
-  desfazerUltimo,
+  desfazerLancamento,
+  listarLancamentosAtivos,
   listarUltimosLancamentos,
   registrarGasto,
   type AutorMensagem,
@@ -16,7 +17,7 @@ export type CommandContext = {
 
 export async function handleCommand(context: CommandContext): Promise<string | null> {
   const [command, ...args] = context.texto.trim().split(/\s+/);
-  const normalized = command.toLowerCase();
+  const normalized = normalizeCommand(command);
 
   if (normalized === '!gasto' || normalized === 'gasto') {
     return registrarGasto(context);
@@ -31,11 +32,21 @@ export async function handleCommand(context: CommandContext): Promise<string | n
   }
 
   if (normalized === '!desfazer' || normalized === 'desfazer') {
-    return desfazerUltimo({ autor: context.autor, dsGrupoJid: context.dsGrupoJid });
+    const cnLancamento = parseOptionalId(args[0]);
+
+    if (args[0] && !cnLancamento) {
+      return '❌ ID inválido. Use: desfazer 42';
+    }
+
+    return desfazerLancamento({ autor: context.autor, dsGrupoJid: context.dsGrupoJid, cnLancamento });
   }
 
-  if (normalized === '!ultimos' || normalized === '!últimos' || normalized === 'ultimos' || normalized === 'últimos') {
+  if (normalized === '!ultimos' || normalized === 'ultimos') {
     return listarUltimosLancamentos({ autor: context.autor, dsGrupoJid: context.dsGrupoJid });
+  }
+
+  if (normalized === '!lancamentos' || normalized === 'lancamentos') {
+    return listarLancamentosAtivos({ autor: context.autor, dsGrupoJid: context.dsGrupoJid });
   }
 
   if (normalized === '!corrigir' || normalized === 'corrigir') {
@@ -50,9 +61,10 @@ export async function handleCommand(context: CommandContext): Promise<string | n
       '- gasto marcelo 2056 servidor particular em 10 vezes no cartão categoria infra',
       '- resumo [hoje|semana|mes|YYYY-MM]',
       '- quem deve',
+      '- lançamentos',
       '- ultimos',
       '- corrigir 42 valor 60 descricao almoço forma pix',
-      '- desfazer',
+      '- desfazer [id]',
       '',
       'Se preferir, os comandos com ! também continuam funcionando.',
     ].join('\n');
@@ -63,4 +75,17 @@ export async function handleCommand(context: CommandContext): Promise<string | n
 
 function isQuemDeve(texto: string): boolean {
   return /^!?quem\s+deve(?:\s|$)/i.test(texto.trim());
+}
+
+function normalizeCommand(value: string): string {
+  return value.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+}
+
+function parseOptionalId(value: string | undefined): number | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  const id = Number(value);
+  return Number.isInteger(id) && id > 0 ? id : undefined;
 }

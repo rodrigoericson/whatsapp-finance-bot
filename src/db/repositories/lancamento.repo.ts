@@ -36,6 +36,14 @@ export type ResumoPorTexto = {
   vlTotal: string;
 };
 
+export type ResumoPorFormaPagamento = {
+  nome: string;
+  dsDescricao: string | null;
+  vlTotal: string;
+  qtParcelasTotal: number | null;
+  vlParcela: string | null;
+};
+
 export type LancamentoPatch = {
   vlValor?: number;
   dsDescricao?: string;
@@ -347,7 +355,7 @@ export async function estornarGrupoParcela(cnParcelaGrupo: number): Promise<numb
 export async function totalPeriodo(input: { dsGrupoJid: string; inicio: Date; fim: Date }): Promise<string> {
   const result = await pool.query(
     `
-      SELECT COALESCE(SUM(vl_valor), 0) AS vl_total
+      SELECT COALESCE(SUM(CASE WHEN cn_parcela_grupo IS NOT NULL AND nr_parcela <> 1 THEN 0 ELSE COALESCE(vl_valor_total_compra, vl_valor) END), 0) AS vl_total
       FROM wpp_finance.tbl_lancamento
       WHERE ds_grupo_jid = $1
         AND fl_estornado = FALSE
@@ -363,7 +371,7 @@ export async function totalPeriodo(input: { dsGrupoJid: string; inicio: Date; fi
 export async function resumoPorUsuario(input: { dsGrupoJid: string; inicio: Date; fim: Date }): Promise<ResumoPorUsuario[]> {
   const result = await pool.query(
     `
-      SELECT p.cn_usuario, p.nm_apelido, COALESCE(SUM(l.vl_valor), 0) AS vl_total
+      SELECT p.cn_usuario, p.nm_apelido, COALESCE(SUM(CASE WHEN l.cn_parcela_grupo IS NOT NULL AND l.nr_parcela <> 1 THEN 0 ELSE COALESCE(l.vl_valor_total_compra, l.vl_valor) END), 0) AS vl_total
       FROM wpp_finance.tbl_lancamento l
       JOIN wpp_finance.tbl_usuario p ON p.cn_usuario = l.cn_pessoa_gasto
       WHERE l.ds_grupo_jid = $1
@@ -391,7 +399,7 @@ export async function resumoPorCampo(input: {
 }): Promise<ResumoPorTexto[]> {
   const result = await pool.query(
     `
-      SELECT COALESCE(${input.campo}, 'sem informação') AS nome, COALESCE(SUM(vl_valor), 0) AS vl_total
+      SELECT COALESCE(${input.campo}, 'sem informação') AS nome, COALESCE(SUM(CASE WHEN cn_parcela_grupo IS NOT NULL AND nr_parcela <> 1 THEN 0 ELSE COALESCE(vl_valor_total_compra, vl_valor) END), 0) AS vl_total
       FROM wpp_finance.tbl_lancamento
       WHERE ds_grupo_jid = $1
         AND fl_estornado = FALSE
@@ -405,4 +413,34 @@ export async function resumoPorCampo(input: {
   );
 
   return result.rows.map((row) => ({ nome: String(row.nome), vlTotal: String(row.vl_total) }));
+}
+
+export async function resumoPorFormaPagamento(input: { dsGrupoJid: string; inicio: Date; fim: Date }): Promise<ResumoPorFormaPagamento[]> {
+  const result = await pool.query(
+    `
+      SELECT COALESCE(ds_forma_pagamento, 'sem informação') AS nome,
+        MIN(ds_descricao) AS ds_descricao,
+        COALESCE(SUM(CASE WHEN cn_parcela_grupo IS NOT NULL AND nr_parcela <> 1 THEN 0 ELSE COALESCE(vl_valor_total_compra, vl_valor) END), 0) AS vl_total,
+        CASE WHEN cn_parcela_grupo IS NULL THEN NULL ELSE MIN(qt_parcelas_total) END AS qt_parcelas_total,
+        CASE WHEN cn_parcela_grupo IS NULL THEN NULL ELSE MIN(vl_valor) END AS vl_parcela
+      FROM wpp_finance.tbl_lancamento
+      WHERE ds_grupo_jid = $1
+        AND fl_estornado = FALSE
+        AND dt_lancamento >= $2
+        AND dt_lancamento < $3
+      GROUP BY COALESCE(ds_forma_pagamento, 'sem informação'), cn_parcela_grupo
+      HAVING COALESCE(SUM(CASE WHEN cn_parcela_grupo IS NOT NULL AND nr_parcela <> 1 THEN 0 ELSE COALESCE(vl_valor_total_compra, vl_valor) END), 0) > 0
+      ORDER BY vl_total DESC, nome
+      LIMIT 5
+    `,
+    [input.dsGrupoJid, input.inicio, input.fim],
+  );
+
+  return result.rows.map((row) => ({
+    nome: String(row.nome),
+    dsDescricao: row.ds_descricao === null ? null : String(row.ds_descricao),
+    vlTotal: String(row.vl_total),
+    qtParcelasTotal: row.qt_parcelas_total === null ? null : Number(row.qt_parcelas_total),
+    vlParcela: row.vl_parcela === null ? null : String(row.vl_parcela),
+  }));
 }

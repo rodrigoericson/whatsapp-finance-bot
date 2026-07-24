@@ -37,7 +37,7 @@ git push -u origin main
 
 - Node.js + TypeScript strict
 - Baileys (`@whiskeysockets/baileys`)
-- PostgreSQL no Docker (`postgres-lab`)
+- PostgreSQL no Docker (`postgres-lab17`)
 - Pino para logs
 - Zod para config
 - Oxlint
@@ -48,7 +48,7 @@ git push -u origin main
 Container usado:
 
 ```text
-postgres-lab
+postgres-lab17
 ```
 
 Database:
@@ -171,6 +171,8 @@ quem deve
 ```
 
 ```text
+lançamentos
+lancamentos
 ultimos
 ```
 
@@ -181,6 +183,7 @@ corrigir 42 categoria nenhuma
 
 ```text
 desfazer
+desfazer 42
 ```
 
 ## Regras atuais de negócio
@@ -240,7 +243,7 @@ gasto marcelo 2056 servidor particular em 10 vezes no cartão
 
 Grava uma linha por parcela em `tbl_lancamento`, com `cn_parcela_grupo` comum.
 
-Resumo mensal soma apenas a parcela do mês.
+Resumo conta o total da compra parcelada nas seções de total, pessoa e categoria; em formas de pagamento, mostra o parcelamento detalhado.
 
 `desfazer` de compra parcelada estorna todas as parcelas do grupo.
 
@@ -248,9 +251,13 @@ Resumo mensal soma apenas a parcela do mês.
 
 ### Correção
 
+`lançamentos` lista os últimos 10 lançamentos ativos do registrador no grupo com IDs para correção/estorno.
+
 `ultimos` lista os últimos 5 lançamentos ativos do registrador no grupo.
 
 `corrigir ID ...` só corrige lançamentos do próprio registrador no mesmo grupo.
+
+`desfazer ID` só estorna lançamentos do próprio registrador no mesmo grupo; parcelados estornam todas as parcelas do grupo.
 
 Campos aceitos:
 

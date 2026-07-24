@@ -26,14 +26,18 @@ resumo hoje
 resumo semana
 resumo 2026-07
 quem deve
+lançamentos
 ultimos
 corrigir 42 valor 60 descricao almoço forma pix
 desfazer
+desfazer 42
 ```
 
-Os comandos com `!` continuam funcionando se você preferir: `!gasto`, `!resumo`, `!quem-deve`, `!desfazer`.
+Os comandos com `!` continuam funcionando se você preferir: `!gasto`, `!resumo`, `!quem-deve`, `!lançamentos`, `!desfazer`.
 
 Quando houver um nome antes do valor, ele vira a pessoa do gasto. Ex.: `gasto marcelo 600 planta baixa pix` entra no resumo como Marcelo. Categoria só é salva se você escrever explicitamente `categoria nome`.
+
+No `resumo`, compras parceladas contam pelo total da compra nas seções de total, pessoa e categoria. Em formas de pagamento, o bot detalha o parcelamento, por exemplo: `cartao R$ 2.059,00 em 10x de R$ 205,90 — servidor particular`.
 
 ## Configuração
 
@@ -45,19 +49,28 @@ cp .env.example .env
 
 2. Ajuste `DATABASE_URL` com a senha local do PostgreSQL.
 
-3. Crie o database no container `postgres-lab`:
+3. Configure o grupo permitido no `.env`:
 
-```bash
-docker exec -i postgres-lab psql -U postgres < docker/create-database.sql
+```env
+ALLOWED_GROUP_ID=120000000000000000@g.us
+ALLOW_ALL_GROUPS=false
 ```
 
-4. Rode as migrations SQL versionadas pelo migrator próprio:
+Por padrão, o bot ignora grupos quando `ALLOWED_GROUP_ID` está vazio. Use `ALLOW_ALL_GROUPS=true` apenas para testes conscientes.
+
+4. Crie o database no container `postgres-lab17`:
+
+```bash
+docker exec -i postgres-lab17 psql -U postgres < docker/create-database.sql
+```
+
+5. Rode as migrations SQL versionadas pelo migrator próprio:
 
 ```bash
 npm run migrate
 ```
 
-5. Suba o bot:
+6. Suba o bot:
 
 ```bash
 npm run dev

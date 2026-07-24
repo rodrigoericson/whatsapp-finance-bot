@@ -6,7 +6,7 @@ Instruções para qualquer agente de código trabalhar neste projeto.
 
 - Bot gratuito de WhatsApp para registrar gastos em grupos
 - Stack: Node.js 22 + TypeScript + Baileys + PostgreSQL
-- Banco local: `postgres-lab` no Docker, database `whatsapp_bot`, schema `wpp_finance`
+- Banco local: `postgres-lab17` no Docker, database `whatsapp_bot`, schema `wpp_finance`
 - Projeto fora do STA: `F:\Git\whatsapp-finance-bot`
 
 ## Como rodar
@@ -27,7 +27,10 @@ Na primeira execução, escaneie o QR no terminal com o WhatsApp.
 - `!resumo`
 - `!resumo hoje`
 - `!quem-deve`
+- `!lançamentos`
+- `!corrigir 42 valor 60 descricao almoço forma pix`
 - `!desfazer`
+- `!desfazer 42`
 
 ## Convenções
 
@@ -64,5 +67,5 @@ Na primeira execução, escaneie o QR no terminal com o WhatsApp.
 
 - `messages.upsert` pode chegar duplicado; usar `nr_mensagem_wa_id`
 - Baileys pode exigir novo QR se a sessão cair definitivamente
-- `ALLOWED_GROUP_ID` vazio aceita qualquer grupo; configure após descobrir o JID
-- O bot depende do `postgres-lab` estar rodando
+- `ALLOWED_GROUP_ID` vazio faz o bot ignorar grupos; configure após descobrir o JID ou use `ALLOW_ALL_GROUPS=true` só em teste consciente
+- O bot depende do `postgres-lab17` estar rodando

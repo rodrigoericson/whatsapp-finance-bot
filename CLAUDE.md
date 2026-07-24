@@ -84,5 +84,5 @@ Este arquivo define regras para agentes IA que trabalhem neste projeto.
 - Se a sessão expirar de vez, apagar a pasta de sessão e escanear QR novamente
 - Não processar grupos fora de `ALLOWED_GROUP_ID` quando configurado
 - WhatsApp pode limitar automações agressivas; v1 só responde dentro do grupo
-- O container `postgres-lab` precisa estar rodando antes do bot
+- O container `postgres-lab17` precisa estar rodando antes do bot
 - Windows suspendendo a máquina derruba o bot; usar PM2/Task Scheduler depois da v1

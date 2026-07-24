@@ -1,14 +1,17 @@
 import 'dotenv/config';
 import { z } from 'zod';
 
+const optionalNonEmptyString = z.preprocess((value) => (value === '' ? undefined : value), z.string().trim().min(1).optional());
+
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   LOG_LEVEL: z.string().default('info'),
   TZ: z.string().default('America/Sao_Paulo'),
   WA_SESSION_PATH: z.string().default('./auth_info'),
-  ALLOWED_GROUP_ID: z.string().optional(),
+  ALLOWED_GROUP_ID: optionalNonEmptyString,
+  ALLOW_ALL_GROUPS: z.coerce.boolean().default(false),
   ALLOW_FROM_ME: z.coerce.boolean().default(false),
-  WA_REPORT_TARGET_JID: z.string().optional(),
+  WA_REPORT_TARGET_JID: optionalNonEmptyString,
   WA_REPORT_DAILY_ENABLED: z.coerce.boolean().default(true),
   WA_REPORT_DAILY_HOUR: z.coerce.number().int().min(0).max(23).default(21),
   WA_REPORT_DAILY_MINUTE: z.coerce.number().int().min(0).max(59).default(0),

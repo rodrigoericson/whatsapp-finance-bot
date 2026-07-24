@@ -44,47 +44,67 @@ export async function registrarGasto(input: RegistrarGastoInput): Promise<string
   return inserirAVista(input, parsed);
 }
 
-export async function desfazerUltimo(input: { autor: AutorMensagem; dsGrupoJid: string }): Promise<string> {
+export async function desfazerLancamento(input: { autor: AutorMensagem; dsGrupoJid: string; cnLancamento?: number }): Promise<string> {
   const usuario = await upsertUsuario(input.autor);
-  const ultimo = await buscarUltimoAtivoPorUsuario(usuario.cnUsuario, input.dsGrupoJid);
+  const lancamento = input.cnLancamento
+    ? await buscarLancamentoPorId({ cnLancamento: input.cnLancamento, cnUsuario: usuario.cnUsuario, dsGrupoJid: input.dsGrupoJid })
+    : await buscarUltimoAtivoPorUsuario(usuario.cnUsuario, input.dsGrupoJid);
 
-  if (!ultimo) {
-    return 'ℹ️ Não encontrei lançamento ativo para desfazer neste grupo.';
+  if (!lancamento) {
+    return input.cnLancamento
+      ? 'ℹ️ Não encontrei esse lançamento entre os seus gastos ativos neste grupo.'
+      : 'ℹ️ Não encontrei lançamento ativo para desfazer neste grupo.';
   }
 
-  if (ultimo.cnParcelaGrupo && ultimo.qtParcelasTotal) {
-    const removed = await estornarGrupoParcela(ultimo.cnParcelaGrupo);
-    return `↩️ Estornado: ${ultimo.qtParcelasTotal}x de ${formatCurrency(ultimo.vlValor)} — ${ultimo.dsDescricao} (${removed} parcelas removidas)`;
+  if (lancamento.cnParcelaGrupo && lancamento.qtParcelasTotal) {
+    const removed = await estornarGrupoParcela(lancamento.cnParcelaGrupo);
+    return `↩️ Estornado: ${lancamento.qtParcelasTotal}x de ${formatCurrency(lancamento.vlValor)} — ${lancamento.dsDescricao} (${removed} parcelas removidas)`;
   }
 
-  await estornarLancamento(ultimo.cnLancamento);
+  await estornarLancamento(lancamento.cnLancamento);
 
-  return `↩️ Estornado: ${formatCurrency(ultimo.vlValor)} — ${ultimo.dsDescricao}`;
+  return `↩️ Estornado: ${formatCurrency(lancamento.vlValor)} — ${lancamento.dsDescricao}`;
 }
 
 export async function listarUltimosLancamentos(input: { autor: AutorMensagem; dsGrupoJid: string }): Promise<string> {
+  return listarLancamentos(input, {
+    titulo: '🧾 Seus últimos lançamentos:',
+    limite: 5,
+    rodape: ['Para corrigir: corrigir 42 valor 60 descricao almoço forma pix'],
+  });
+}
+
+export async function listarLancamentosAtivos(input: { autor: AutorMensagem; dsGrupoJid: string }): Promise<string> {
+  return listarLancamentos(input, {
+    titulo: '🧾 Seus lançamentos ativos:',
+    limite: 10,
+    rodape: ['Para corrigir: corrigir 42 valor 60 descricao almoço forma pix', 'Para excluir/estornar: desfazer 42'],
+  });
+}
+
+async function listarLancamentos(
+  input: { autor: AutorMensagem; dsGrupoJid: string },
+  options: { titulo: string; limite: number; rodape: string[] },
+): Promise<string> {
   const usuario = await upsertUsuario(input.autor);
   const lancamentos = await buscarLancamentosRecentesPorUsuario({
     cnUsuario: usuario.cnUsuario,
     dsGrupoJid: input.dsGrupoJid,
-    limite: 5,
+    limite: options.limite,
   });
 
   if (lancamentos.length === 0) {
     return 'ℹ️ Não encontrei lançamentos ativos seus neste grupo.';
   }
 
-  return [
-    '🧾 Seus últimos lançamentos:',
-    ...lancamentos.map((item) => {
-      const parcela = item.qtParcelasTotal ? ` · ${item.nrParcela}/${item.qtParcelasTotal}` : '';
-      const forma = item.dsFormaPagamento ? ` · ${item.dsFormaPagamento}` : '';
-      const pessoa = item.cnPessoaGasto !== item.cnUsuario ? ` · pessoa: ${item.nmPessoaGasto}` : '';
-      return `#${item.cnLancamento} — ${formatCurrency(item.vlValor)} · ${item.dsDescricao}${forma}${pessoa} · ${item.nrMesReferencia}${parcela}`;
-    }),
-    '',
-    'Para corrigir: corrigir 42 valor 60 descricao almoço forma pix',
-  ].join('\n');
+  return [options.titulo, ...lancamentos.map(formatLancamentoLinha), '', ...options.rodape].join('\n');
+}
+
+function formatLancamentoLinha(item: Awaited<ReturnType<typeof buscarLancamentosRecentesPorUsuario>>[number]): string {
+  const parcela = item.qtParcelasTotal ? ` · ${item.nrParcela}/${item.qtParcelasTotal}` : '';
+  const forma = item.dsFormaPagamento ? ` · ${item.dsFormaPagamento}` : '';
+  const pessoa = item.cnPessoaGasto !== item.cnUsuario ? ` · pessoa: ${item.nmPessoaGasto}` : '';
+  return `#${item.cnLancamento} — ${formatCurrency(item.vlValor)} · ${item.dsDescricao}${forma}${pessoa} · ${item.nrMesReferencia}${parcela}`;
 }
 
 export async function corrigirLancamentoPorTexto(input: RegistrarGastoInput): Promise<string> {
@@ -224,8 +244,13 @@ function calcularParcelas(valorTotal: number, qtParcelas: number): ParcelaInput[
   return Array.from({ length: qtParcelas }, (_, index) => {
     const cents = baseCents + (index < remainder ? 1 : 0);
     const date = new Date();
-    date.setMonth(date.getMonth() + index, 1);
-    date.setHours(0, 0, 0, 0);
+
+    if (index === 0) {
+      date.setHours(0, 0, 0, 0);
+    } else {
+      date.setMonth(date.getMonth() + index, 1);
+      date.setHours(0, 0, 0, 0);
+    }
 
     return {
       nrParcela: index + 1,

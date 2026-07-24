@@ -15,6 +15,11 @@ export async function handleMessage(sock: WASocket, message: WAMessage): Promise
     return;
   }
 
+  if (!env.ALLOWED_GROUP_ID && !env.ALLOW_ALL_GROUPS) {
+    logger.warn({ remoteJid }, 'Mensagem ignorada: ALLOWED_GROUP_ID não configurado');
+    return;
+  }
+
   if (env.ALLOWED_GROUP_ID && remoteJid !== env.ALLOWED_GROUP_ID) {
     return;
   }

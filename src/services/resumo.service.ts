@@ -1,4 +1,4 @@
-import { resumoPorCampo, resumoPorUsuario, totalPeriodo } from '../db/repositories/lancamento.repo.js';
+import { resumoPorCampo, resumoPorFormaPagamento, resumoPorUsuario, totalPeriodo, type ResumoPorFormaPagamento } from '../db/repositories/lancamento.repo.js';
 import { parsePeriodo } from '../parser/periodo.js';
 import { formatCurrency, formatPercent } from './format.js';
 
@@ -9,7 +9,7 @@ export async function gerarResumo(input: { dsGrupoJid: string; periodoRaw?: stri
     totalPeriodo(filtro),
     resumoPorUsuario(filtro),
     resumoPorCampo({ ...filtro, campo: 'ds_categoria' }),
-    resumoPorCampo({ ...filtro, campo: 'ds_forma_pagamento' }),
+    resumoPorFormaPagamento(filtro),
   ]);
 
   const lines = [`📊 Resumo — ${periodo.label}`, `Total: ${formatCurrency(total)}`, ''];
@@ -19,7 +19,7 @@ export async function gerarResumo(input: { dsGrupoJid: string; periodoRaw?: stri
   lines.push('', 'Categorias:');
   lines.push(...formatLista(categorias));
   lines.push('', 'Formas de pagamento:');
-  lines.push(...formatLista(formas));
+  lines.push(...formatFormasPagamento(formas));
 
   return lines.join('\n');
 }
@@ -49,4 +49,21 @@ function formatLista(items: Array<{ nome: string; vlTotal: string }>): string[] 
   }
 
   return items.map((item) => `- ${item.nome}: ${formatCurrency(item.vlTotal)}`);
+}
+
+function formatFormasPagamento(items: ResumoPorFormaPagamento[]): string[] {
+  if (items.length === 0) {
+    return ['- sem dados'];
+  }
+
+  return items.map(formatFormaPagamento);
+}
+
+export function formatFormaPagamento(item: ResumoPorFormaPagamento): string {
+  if (!item.qtParcelasTotal || !item.vlParcela) {
+    return `- ${item.nome}: ${formatCurrency(item.vlTotal)}`;
+  }
+
+  const descricao = item.dsDescricao ? ` — ${item.dsDescricao}` : '';
+  return `- ${item.nome} ${formatCurrency(item.vlTotal)} em ${item.qtParcelasTotal}x de ${formatCurrency(item.vlParcela)}${descricao}`;
 }

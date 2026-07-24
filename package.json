@@ -9,6 +9,7 @@
     "build": "tsc -b",
     "start": "node dist/index.js",
     "lint": "oxlint .",
+    "test": "node --import tsx --test \"tests/**/*.test.ts\"",
     "migrate": "tsx src/db/migrate.ts",
     "reset-auth": "tsx scripts/reset-auth.ts"
   },
