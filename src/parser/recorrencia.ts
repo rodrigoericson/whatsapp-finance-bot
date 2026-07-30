@@ -50,9 +50,10 @@ export function parseRecorrenciaCriar(texto: string): RecorrenciaParseResult | n
 
   const beforeValue = cleaned.slice(0, valueMatch.index);
   const afterValue = cleaned.slice(valueMatch.index + valueMatch[0].length);
+  const fullText = `${beforeValue} ${afterValue}`;
 
-  const pessoaGastoNome = extrairPessoa(beforeValue);
-  let descriptionSource = `${removerPessoa(beforeValue, pessoaGastoNome)} ${afterValue}`;
+  const pessoaGastoNome = extrairPessoaExplicita(fullText);
+  let descriptionSource = removerPessoaExplicita(fullText);
 
   const categoria = extrairCategoriaExplicita(descriptionSource);
   const formaPagamento = extrairFormaPagamento(descriptionSource);
@@ -94,25 +95,18 @@ function removerDia(text: string): string {
   return text.replace(/(?:todo\s+)?(?:no\s+)?dia\s+\d{1,2}\b/gi, ' ');
 }
 
-function extrairPessoa(beforeValue: string): string | null {
-  const words = beforeValue
-    .split(/\s+/)
-    .map((word) => word.replace(/[.,;:!?()[\]{}]/g, ''))
-    .filter(Boolean);
+function extrairPessoaExplicita(text: string): string | null {
+  const match = text.match(/\b(?:pessoa|pra|para)\s+([a-záàâãéêíóôõúüç]+)/i);
 
-  const pessoa = words.find(
-    (word) => !['para', 'pra', 'pro', 'de', 'do', 'da', 'no', 'na', 'em'].includes(word.toLowerCase()),
-  );
-
-  return pessoa ? capitalize(pessoa) : null;
-}
-
-function removerPessoa(text: string, pessoa: string | null): string {
-  if (!pessoa) {
-    return text;
+  if (!match) {
+    return null;
   }
 
-  return text.replace(new RegExp(`\\b${escapeRegExp(pessoa)}\\b`, 'i'), ' ');
+  return capitalize(match[1]);
+}
+
+function removerPessoaExplicita(text: string): string {
+  return text.replace(/\b(?:pessoa|pra|para)\s+[a-záàâãéêíóôõúüç]+/i, ' ');
 }
 
 function extrairFormaPagamento(text: string): string | null {
@@ -179,6 +173,3 @@ function capitalize(value: string): string {
   return `${normalized.charAt(0).toUpperCase()}${normalized.slice(1).toLowerCase()}`;
 }
 
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
