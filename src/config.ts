@@ -24,6 +24,9 @@ const envSchema = z.object({
   DEFAULT_CURRENCY: z.string().default('BRL'),
   LOCALE: z.string().default('pt-BR'),
   TIMEZONE: z.string().default('America/Sao_Paulo'),
+  WA_RECORRENCIA_ENABLED: z.coerce.boolean().default(true),
+  WA_RECORRENCIA_HOUR: z.coerce.number().int().min(0).max(23).default(0),
+  WA_RECORRENCIA_MINUTE: z.coerce.number().int().min(0).max(59).default(5),
 });
 
 export const env = envSchema.parse(process.env);

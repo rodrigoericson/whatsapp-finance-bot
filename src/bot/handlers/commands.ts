@@ -6,6 +6,13 @@ import {
   registrarGasto,
   type AutorMensagem,
 } from '../../services/lancamento.service.js';
+import {
+  criarRecorrencia,
+  listarRecorrencias,
+  pausarRecorrencia,
+  retomarRecorrencia,
+  excluirRecorrencia,
+} from '../../services/recorrencia.service.js';
 import { gerarQuemDeve, gerarResumo } from '../../services/resumo.service.js';
 
 export type CommandContext = {
@@ -53,6 +60,10 @@ export async function handleCommand(context: CommandContext): Promise<string | n
     return corrigirLancamentoPorTexto(context);
   }
 
+  if (normalized === '!recorrencia' || normalized === 'recorrencia') {
+    return handleRecorrenciaSubcommand(context, args);
+  }
+
   if (normalized === '!ajuda' || normalized === 'ajuda') {
     return [
       '🤖 Comandos disponíveis:',
@@ -65,6 +76,13 @@ export async function handleCommand(context: CommandContext): Promise<string | n
       '- ultimos',
       '- corrigir 42 valor 60 descricao almoço forma pix',
       '- desfazer [id]',
+      '',
+      '🔁 Recorrências:',
+      '- recorrencia criar netflix 39.90 dia 15 cartao categoria streaming',
+      '- recorrencia listar',
+      '- recorrencia pausar <id>',
+      '- recorrencia retomar <id>',
+      '- recorrencia excluir <id>',
       '',
       'Se preferir, os comandos com ! também continuam funcionando.',
     ].join('\n');
@@ -86,6 +104,53 @@ function parseOptionalId(value: string | undefined): number | undefined {
     return undefined;
   }
 
+  const id = Number(value);
+  return Number.isInteger(id) && id > 0 ? id : undefined;
+}
+
+async function handleRecorrenciaSubcommand(context: CommandContext, args: string[]): Promise<string> {
+  const [sub, ...rest] = args;
+  const subNormalized = normalizeCommand(sub ?? '');
+  const remaining = rest.join(' ').trim();
+
+  switch (subNormalized) {
+    case 'criar':
+      return criarRecorrencia({ texto: remaining, autor: context.autor, dsGrupoJid: context.dsGrupoJid });
+    case 'listar':
+    case 'lista':
+      return listarRecorrencias({ autor: context.autor, dsGrupoJid: context.dsGrupoJid });
+    case 'pausar': {
+      const id = parseRequiredId(rest[0]);
+      if (!id) return '❌ Uso: recorrencia pausar <id>';
+      return pausarRecorrencia({ autor: context.autor, cnRecorrencia: id, dsGrupoJid: context.dsGrupoJid });
+    }
+    case 'retomar':
+    case 'reativar': {
+      const id = parseRequiredId(rest[0]);
+      if (!id) return '❌ Uso: recorrencia retomar <id>';
+      return retomarRecorrencia({ autor: context.autor, cnRecorrencia: id, dsGrupoJid: context.dsGrupoJid });
+    }
+    case 'excluir':
+    case 'remover':
+    case 'deletar': {
+      const id = parseRequiredId(rest[0]);
+      if (!id) return '❌ Uso: recorrencia excluir <id>';
+      return excluirRecorrencia({ autor: context.autor, cnRecorrencia: id, dsGrupoJid: context.dsGrupoJid });
+    }
+    default:
+      return [
+        '🔁 Subcomandos de recorrencia:',
+        '- recorrencia criar <descrição> <valor> dia <1-28> [forma] [categoria ...]',
+        '- recorrencia listar',
+        '- recorrencia pausar <id>',
+        '- recorrencia retomar <id>',
+        '- recorrencia excluir <id>',
+      ].join('\n');
+  }
+}
+
+function parseRequiredId(value: string | undefined): number | undefined {
+  if (!value) return undefined;
   const id = Number(value);
   return Number.isInteger(id) && id > 0 ? id : undefined;
 }
