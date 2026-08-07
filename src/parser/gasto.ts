@@ -1,3 +1,8 @@
+const formasCompostas: Array<{ pattern: RegExp; value: string }> = [
+  { pattern: /\bcart[aã]o\s+de\s+cr[eé]dito\b/i, value: 'credito' },
+  { pattern: /\bcart[aã]o\s+de\s+d[eé]bito\b/i, value: 'debito' },
+];
+
 const formasPagamento = new Map([
   ['pix', 'pix'],
   ['cartao', 'cartao'],
@@ -122,6 +127,12 @@ function extrairParcelas(text: string): number | null {
 }
 
 function extrairFormaPagamento(text: string): string | null {
+  for (const { pattern, value } of formasCompostas) {
+    if (pattern.test(text)) {
+      return value;
+    }
+  }
+
   const words = text.split(/\s+/).map((word) => word.replace(/[.,;:!?()[\]{}]/g, '').toLowerCase()).filter(Boolean);
 
   for (const word of words) {
@@ -154,7 +165,13 @@ function removerParcelamento(text: string): string {
 }
 
 function removerFormaPagamento(text: string): string {
-  return text
+  let result = text;
+
+  for (const { pattern } of formasCompostas) {
+    result = result.replace(pattern, ' ');
+  }
+
+  return result
     .split(/\s+/)
     .filter((word) => {
       const normalized = word.replace(/[.,;:!?()[\]{}]/g, '').toLowerCase();
