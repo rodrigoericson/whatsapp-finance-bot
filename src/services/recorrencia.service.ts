@@ -8,7 +8,7 @@ import {
   type Recorrencia,
 } from '../db/repositories/recorrencia.repo.js';
 import { inserirLancamento } from '../db/repositories/lancamento.repo.js';
-import { upsertUsuario } from '../db/repositories/usuario.repo.js';
+import { upsertUsuario, buscarUsuarioPorNome } from '../db/repositories/usuario.repo.js';
 import { parseRecorrenciaCriar } from '../parser/recorrencia.js';
 import { mesReferencia } from '../parser/periodo.js';
 import { formatCurrency } from './format.js';
@@ -174,6 +174,12 @@ function diasNoMes(date: Date): number {
 async function resolverPessoaGasto(autor: AutorMensagem, pessoaGastoNome: string | null) {
   if (!pessoaGastoNome) {
     return upsertUsuario(autor);
+  }
+
+  const existente = await buscarUsuarioPorNome(pessoaGastoNome);
+
+  if (existente) {
+    return existente;
   }
 
   return upsertUsuario({

@@ -11,7 +11,7 @@ import {
   type ParcelaInput,
   type LancamentoPatch,
 } from '../db/repositories/lancamento.repo.js';
-import { upsertUsuario } from '../db/repositories/usuario.repo.js';
+import { upsertUsuario, buscarUsuarioPorNome } from '../db/repositories/usuario.repo.js';
 import { parseCorrecao, type CorrecaoPatch } from '../parser/correcao.js';
 import { parseGastoCommand, parseGastoNatural, type GastoParseResult } from '../parser/gasto.js';
 import { mesReferencia } from '../parser/periodo.js';
@@ -155,6 +155,12 @@ function toLancamentoPatch(patch: CorrecaoPatch, dsMensagemCorrecao: string): La
 async function resolverPessoaGasto(autor: AutorMensagem, pessoaGastoNome: string | null) {
   if (!pessoaGastoNome) {
     return upsertUsuario(autor);
+  }
+
+  const existente = await buscarUsuarioPorNome(pessoaGastoNome);
+
+  if (existente) {
+    return existente;
   }
 
   return upsertUsuario({

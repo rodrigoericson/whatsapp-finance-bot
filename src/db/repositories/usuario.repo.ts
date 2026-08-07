@@ -37,3 +37,25 @@ export async function upsertUsuario(input: {
 
   return mapUsuario(result.rows[0]);
 }
+
+export async function buscarUsuarioPorNome(nome: string): Promise<Usuario | null> {
+  const result = await pool.query(
+    `
+      SELECT cn_usuario, nr_telefone, nm_apelido, nm_pushname
+      FROM wpp_finance.tbl_usuario
+      WHERE fl_ativo = TRUE
+        AND nr_telefone NOT LIKE 'manual:%'
+        AND (
+          LOWER(nm_apelido) = LOWER($1)
+          OR LOWER(nm_pushname) LIKE LOWER($1) || '%'
+        )
+      ORDER BY
+        CASE WHEN LOWER(nm_apelido) = LOWER($1) THEN 0 ELSE 1 END,
+        cn_usuario
+      LIMIT 1
+    `,
+    [nome],
+  );
+
+  return (result.rowCount ?? 0) === 0 ? null : mapUsuario(result.rows[0]);
+}
