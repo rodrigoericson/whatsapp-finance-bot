@@ -70,11 +70,13 @@ docker exec -i postgres-lab17 psql -U postgres < docker/create-database.sql
 npm run migrate
 ```
 
-6. Suba o bot:
+6. Suba o bot em desenvolvimento:
 
 ```bash
 npm run dev
 ```
+
+Em produção/24x7, use o serviço systemd documentado em [docs/operacao-vm.md](docs/operacao-vm.md).
 
 Na primeira execução, escaneie o QR exibido no terminal.
 
@@ -138,4 +140,6 @@ O bot trata dados financeiros como sensíveis e não deve logar credenciais, tok
 
 ## 24/7
 
-A v1 roda localmente. Depois de validar o fluxo no grupo, use PM2 ou Task Scheduler para manter o bot ativo no Windows.
+A operação 24/7 recomendada usa uma VM Debian no Proxmox, PostgreSQL 17 via Docker e o bot como serviço systemd.
+
+Guia operacional completo: [docs/operacao-vm.md](docs/operacao-vm.md)
