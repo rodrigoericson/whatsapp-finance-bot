@@ -1,6 +1,6 @@
 const formasCompostas: Array<{ pattern: RegExp; value: string }> = [
-  { pattern: /\bcart[aã]o\s+de\s+cr[eé]dito\b/i, value: 'credito' },
-  { pattern: /\bcart[aã]o\s+de\s+d[eé]bito\b/i, value: 'debito' },
+  { pattern: /\bcart[aã]o\s+de\s+cr[eé]dito\b/gi, value: 'credito' },
+  { pattern: /\bcart[aã]o\s+de\s+d[eé]bito\b/gi, value: 'debito' },
 ];
 
 const formasPagamento = new Map([
@@ -128,6 +128,7 @@ function extrairParcelas(text: string): number | null {
 
 function extrairFormaPagamento(text: string): string | null {
   for (const { pattern, value } of formasCompostas) {
+    pattern.lastIndex = 0;
     if (pattern.test(text)) {
       return value;
     }
