@@ -31,7 +31,8 @@ export async function gerarTotalGeral(dsGrupoJid: string): Promise<string> {
     return 'ℹ️ Nenhum lançamento registrado neste grupo.';
   }
 
-  return `💰 Total geral: ${formatCurrency(vlTotal)} (${qtLancamentos} lançamentos)`;
+  const label = qtLancamentos === 1 ? '1 lançamento' : `${qtLancamentos} lançamentos`;
+  return `💰 Total geral: ${formatCurrency(vlTotal)} (${label})`;
 }
 
 export async function gerarQuemDeve(input: { dsGrupoJid: string; periodoRaw?: string }): Promise<string> {

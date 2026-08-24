@@ -355,8 +355,9 @@ export async function estornarGrupoParcela(cnParcelaGrupo: number): Promise<numb
 export async function totalGeral(dsGrupoJid: string): Promise<{ vlTotal: string; qtLancamentos: number }> {
   const result = await pool.query(
     `
-      SELECT COALESCE(SUM(vl_valor), 0)::text AS vl_total,
-        COUNT(*)::int AS qt_lancamentos
+      SELECT
+        COALESCE(SUM(CASE WHEN cn_parcela_grupo IS NOT NULL AND nr_parcela <> 1 THEN 0 ELSE COALESCE(vl_valor_total_compra, vl_valor) END), 0)::text AS vl_total,
+        COUNT(*) FILTER (WHERE cn_parcela_grupo IS NULL OR nr_parcela = 1)::int AS qt_lancamentos
       FROM wpp_finance.tbl_lancamento
       WHERE ds_grupo_jid = $1
         AND fl_estornado = FALSE
