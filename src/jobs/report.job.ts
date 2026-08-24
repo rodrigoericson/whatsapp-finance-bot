@@ -1,7 +1,7 @@
 import type { WASocket } from '@whiskeysockets/baileys';
 import { env } from '../config.js';
 import { logger } from '../logger.js';
-import { gerarQuemDeve, gerarResumo, gerarTotalGeral } from '../services/resumo.service.js';
+import { gerarQuemDeve, gerarResumo } from '../services/resumo.service.js';
 
 let dailyTimer: NodeJS.Timeout | null = null;
 let weeklyTimer: NodeJS.Timeout | null = null;
@@ -75,8 +75,7 @@ async function sendDailyReport(sock: WASocket): Promise<void> {
   }
 
   const resumo = await gerarResumo({ dsGrupoJid: targetJid, periodoRaw: 'hoje' });
-  const totalGeral = await gerarTotalGeral(targetJid);
-  await sock.sendMessage(targetJid, { text: `☀️ Relatório diário\n\n${resumo}\n\n${totalGeral}` });
+  await sock.sendMessage(targetJid, { text: `☀️ Relatório diário\n\n${resumo}` });
   logger.info({ target: targetJid }, 'Relatório diário enviado');
 }
 
@@ -89,8 +88,7 @@ async function sendWeeklyReport(sock: WASocket): Promise<void> {
 
   const resumo = await gerarResumo({ dsGrupoJid: targetJid, periodoRaw: 'semana' });
   const ranking = await gerarQuemDeve({ dsGrupoJid: targetJid, periodoRaw: 'semana' });
-  const totalGeral = await gerarTotalGeral(targetJid);
-  await sock.sendMessage(targetJid, { text: `📅 Relatório semanal\n\n${resumo}\n\n${ranking}\n\n${totalGeral}` });
+  await sock.sendMessage(targetJid, { text: `📅 Relatório semanal\n\n${resumo}\n\n${ranking}` });
   logger.info({ target: targetJid }, 'Relatório semanal enviado');
 }
 

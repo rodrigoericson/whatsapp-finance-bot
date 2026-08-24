@@ -39,7 +39,7 @@ export async function upsertUsuario(input: {
 }
 
 export async function buscarUsuarioPorNome(nome: string): Promise<Usuario | null> {
-  if (!nome || nome.trim().length < 2) {
+  if (!nome || nome.trim().length < 1) {
     return null;
   }
 
