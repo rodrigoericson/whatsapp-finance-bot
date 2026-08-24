@@ -5,11 +5,12 @@ import { formatCurrency, formatPercent } from './format.js';
 export async function gerarResumo(input: { dsGrupoJid: string; periodoRaw?: string }): Promise<string> {
   const periodo = parsePeriodo(input.periodoRaw);
   const filtro = { dsGrupoJid: input.dsGrupoJid, inicio: periodo.inicio, fim: periodo.fim };
-  const [total, usuarios, categorias, formas] = await Promise.all([
+  const [total, usuarios, categorias, formas, geral] = await Promise.all([
     totalPeriodo(filtro),
     resumoPorUsuario(filtro),
     resumoPorCampo({ ...filtro, campo: 'ds_categoria' }),
     resumoPorFormaPagamento(filtro),
+    totalGeral(input.dsGrupoJid),
   ]);
 
   const lines = [`📊 Resumo — ${periodo.label}`, `Total: ${formatCurrency(total)}`, ''];
@@ -20,6 +21,10 @@ export async function gerarResumo(input: { dsGrupoJid: string; periodoRaw?: stri
   lines.push(...formatLista(categorias));
   lines.push('', 'Formas de pagamento:');
   lines.push(...formatFormasPagamento(formas));
+
+  if (geral.qtLancamentos > 0) {
+    lines.push('', `💰 Total geral: ${formatCurrency(geral.vlTotal)}`);
+  }
 
   return lines.join('\n');
 }
