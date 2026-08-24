@@ -1,4 +1,4 @@
-import { resumoPorCampo, resumoPorFormaPagamento, resumoPorUsuario, totalPeriodo, type ResumoPorFormaPagamento } from '../db/repositories/lancamento.repo.js';
+import { resumoPorCampo, resumoPorFormaPagamento, resumoPorUsuario, totalGeral, totalPeriodo, type ResumoPorFormaPagamento } from '../db/repositories/lancamento.repo.js';
 import { parsePeriodo } from '../parser/periodo.js';
 import { formatCurrency, formatPercent } from './format.js';
 
@@ -22,6 +22,16 @@ export async function gerarResumo(input: { dsGrupoJid: string; periodoRaw?: stri
   lines.push(...formatFormasPagamento(formas));
 
   return lines.join('\n');
+}
+
+export async function gerarTotalGeral(dsGrupoJid: string): Promise<string> {
+  const { vlTotal, qtLancamentos } = await totalGeral(dsGrupoJid);
+
+  if (qtLancamentos === 0) {
+    return 'ℹ️ Nenhum lançamento registrado neste grupo.';
+  }
+
+  return `💰 Total geral: ${formatCurrency(vlTotal)} (${qtLancamentos} lançamentos)`;
 }
 
 export async function gerarQuemDeve(input: { dsGrupoJid: string; periodoRaw?: string }): Promise<string> {

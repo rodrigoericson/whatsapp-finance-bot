@@ -352,6 +352,21 @@ export async function estornarGrupoParcela(cnParcelaGrupo: number): Promise<numb
   return result.rowCount ?? 0;
 }
 
+export async function totalGeral(dsGrupoJid: string): Promise<{ vlTotal: string; qtLancamentos: number }> {
+  const result = await pool.query(
+    `
+      SELECT COALESCE(SUM(vl_valor), 0)::text AS vl_total,
+        COUNT(*)::int AS qt_lancamentos
+      FROM wpp_finance.tbl_lancamento
+      WHERE ds_grupo_jid = $1
+        AND fl_estornado = FALSE
+    `,
+    [dsGrupoJid],
+  );
+
+  return { vlTotal: String(result.rows[0].vl_total), qtLancamentos: Number(result.rows[0].qt_lancamentos) };
+}
+
 export async function totalPeriodo(input: { dsGrupoJid: string; inicio: Date; fim: Date }): Promise<string> {
   const result = await pool.query(
     `

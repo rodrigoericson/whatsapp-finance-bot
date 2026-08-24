@@ -13,7 +13,7 @@ import {
   retomarRecorrencia,
   excluirRecorrencia,
 } from '../../services/recorrencia.service.js';
-import { gerarQuemDeve, gerarResumo } from '../../services/resumo.service.js';
+import { gerarQuemDeve, gerarResumo, gerarTotalGeral } from '../../services/resumo.service.js';
 
 export type CommandContext = {
   texto: string;
@@ -36,6 +36,10 @@ export async function handleCommand(context: CommandContext): Promise<string | n
 
   if (normalized === '!quem-deve' || normalized === 'quem-deve' || isQuemDeve(context.texto)) {
     return gerarQuemDeve({ dsGrupoJid: context.dsGrupoJid, periodoRaw: args[0] });
+  }
+
+  if (normalized === '!total' || normalized === 'total') {
+    return gerarTotalGeral(context.dsGrupoJid);
   }
 
   if (normalized === '!desfazer' || normalized === 'desfazer') {
@@ -79,6 +83,7 @@ export async function handleCommand(context: CommandContext): Promise<string | n
       '',
       '📋 Consultas:',
       '- resumo [hoje|semana|mes|YYYY-MM]',
+      '- total',
       '- quem deve',
       '- lancamentos',
       '- ultimos',
